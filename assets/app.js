@@ -291,7 +291,7 @@
       else { S.loaded.pasien = true; banner((e && e.message) || "Gagal memuat data."); renderAll(); }
     });
   }
-  var IDLE_MS = 5 * 60 * 1000;
+  var IDLE_MS = Infinity;
   function showGate(showCfg) {
     S.mode = null; S.pin = "";
     document.body.classList.remove("mode-input", "mode-monitor");
