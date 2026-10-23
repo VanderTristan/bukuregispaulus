@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b6b74">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Registrasi RI">
+<title>Buku Registrasi Rawat Inap</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="preload" as="image" href="assets/logo.png">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<div id="splash" aria-hidden="true">
+  <img src="assets/logo.png" alt="" width="200" height="200">
+  <div class="st"><div class="s1">RSU GMIM Bethesda Tomohon</div><div class="s2">Buku Registrasi Rawat Inap</div></div>
+</div>
+<main id="gate" class="gate">
+  <img class="logo-gate" src="assets/logo.png" width="96" height="96" alt="Logo RSU GMIM Bethesda Tomohon">
+  <div><div class="label">Sensus harian &amp; rekapitulasi</div><h1>Buku Registrasi Rawat Inap</h1></div>
+  <div class="banner" id="gateMsg" role="status" hidden></div>
+  <div class="choices" id="gateChoices">
+    <button class="choice primary" id="chInput" type="button"><span class="ct">Input data</span><span class="cd">Mencatat dan mengubah data pasien. Memakai PIN.</span></button>
+    <form class="panel" id="pinForm" hidden autocomplete="off">
+      <div class="field"><label for="pin">PIN</label><input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" pattern="[0-9]*"></div>
+      <div class="actions"><button class="btn primary" type="submit" id="pinGo">Masuk</button><button class="btn" type="button" id="pinCancel">Batal</button></div>
+      <div class="note" id="pinMsg" role="alert"></div>
+    </form>
+    <button class="choice" id="chMon" type="button"><span class="ct">Monitoring</span><span class="cd">Melihat rekap, indikator, dan buku registrasi. Tanpa PIN dan tidak bisa mengubah data.</span></button>
+    <button class="gate-link" id="gateCfg" type="button">Pengaturan sambungan</button>
+  </div>
+  <div id="cfgBox" hidden>
+  <form class="panel" id="cfgForm" style="max-width:600px" autocomplete="off">
+      <h2>Sambungan ke Google Sheets</h2>
+      <div class="note">Data pasien disimpan di spreadsheet Google Anda lewat Apps Script. Isi sekali di setiap perangkat (laptop dan HP). Alamat dan kunci hanya tersimpan di perangkat ini.</div>
+      <div class="field"><label for="c-url">Alamat aplikasi web Apps Script</label><input id="c-url" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec" required></div>
+      <div class="field"><label for="c-key">Kunci rahasia</label><input id="c-key" type="password" autocomplete="off" required><span class="hint">Sama dengan KUNCI yang Anda tulis di Code.gs</span></div>
+      <div class="actions"><button class="btn primary" type="submit" id="cfgSave">Simpan dan uji koneksi</button><button class="btn" type="button" id="cfgBack">Kembali</button><button class="btn danger" type="button" id="cfgClear">Putuskan</button></div>
+      <div class="note" id="cfgRes" role="status"></div>
+    </form>
+  </div>
+</main>
+<div class="wrap" id="app" hidden>
+  <header class="top">
+    <div class="brandrow">
+      <img class="logo-head" src="assets/logo.png" width="48" height="48" alt="Logo RSU GMIM Bethesda Tomohon">
+      <div>
+        <div class="label">Sensus harian &amp; rekapitulasi</div>
+        <h1>Buku Registrasi Rawat Inap</h1>
+      </div>
+    </div>
+    <div class="headright">
+      <div class="period" role="group" aria-label="Periode">
+        <button class="stepper" id="prev" aria-label="Bulan sebelumnya">‹</button>
+        <input type="month" id="period" aria-label="Periode bulan">
+        <button class="stepper" id="next" aria-label="Bulan berikutnya">›</button>
+      </div>
+      <div class="who"><b id="modeLabel"></b><button class="btn small" id="lockBtn" type="button">Kunci</button></div>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="reg" aria-selected="true">Registrasi</button>
+    <button role="tab" data-tab="rekap" aria-selected="false">Rekap Bulanan</button>
+    <button role="tab" data-tab="master" class="input-only" aria-selected="false">Master Data</button>
+      </nav>
+
+  <!-- REGISTRASI -->
+  <section id="tab-reg" class="wrap" style="gap:16px">
+    <form class="panel input-only" id="form" autocomplete="off">
+      <div class="panel-head">
+        <h2 id="formTitle">Pasien baru</h2>
+        <span class="note">Harga langsung dihitung dari tarif ruangan dan lama inap.</span>
+      </div>
+      <div class="formgrid">
+        <div class="field span2"><label for="f-nama">Nama pasien</label><input id="f-nama" required></div>
+        <div class="field"><label for="f-rm">No. RM</label><input id="f-rm" class="mono" inputmode="numeric" required></div>
+        <div class="field"><label for="f-kelas">Ruangan / Kelas</label><select id="f-kelas" required></select></div>
+        <div class="field"><label for="f-masuk">Tanggal masuk</label><input type="date" id="f-masuk" required></div>
+        <div class="field"><label for="f-keluar">Tanggal keluar</label><input type="date" id="f-keluar"><span class="hint">Kosongkan bila masih dirawat</span></div>
+        <div class="field"><label for="f-kondisi">Kondisi keluar</label><select id="f-kondisi"><option value="hidup">Hidup</option><option value="mati">Meninggal &lt; 48 jam</option><option value="mati48">Meninggal ≥ 48 jam</option></select><span class="hint">Berlaku bila tanggal keluar diisi</span></div>
+        <div class="field"><label for="f-icd">Kode ICD-10</label><input id="f-icd" class="mono" list="icdlist" required><span class="hint" id="icdHint"></span></div>
+        <div class="field"><label for="f-extra">Biaya lain (obat, tindakan, visite)</label><input id="f-extra" class="mono" inputmode="numeric" placeholder="0"></div>
+      </div>
+      <datalist id="icdlist"></datalist>
+      <div class="bill" aria-live="polite">
+        <div class="calc" id="calc">Isi ruangan dan tanggal masuk untuk melihat harga.</div>
+        <div class="total"><div class="label">Total biaya</div><div class="rp" id="total">Rp 0</div></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="submit" id="save">Simpan pasien</button>
+        <button class="btn" type="button" id="cancel" hidden>Batal ubah</button>
+      </div>
+    </form>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2 id="bukuTitle">Buku registrasi</h2><div class="note" id="bukuNote"></div></div>
+        <div class="actions"><button class="btn small" id="dlReg">Unduh CSV</button></div>
+      </div>
+      <div class="scroll"><table id="tblReg">
+        <thead><tr><th>No</th><th>Nama pasien</th><th>No. RM</th><th>Ruangan / Kelas</th><th>Masuk</th><th>Keluar</th><th>ICD-10</th><th>Diagnosa utama</th><th class="r">Lama (hari)</th><th class="r">Tarif/hari</th><th class="r">Total biaya</th><th></th></tr></thead>
+        <tbody></tbody><tfoot></tfoot>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- REKAP -->
+  <section id="tab-rekap" class="wrap" style="gap:16px" hidden>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2 id="rekapTitle">Rekap</h2><div class="note">Terisi otomatis dari buku registrasi. Hari perawatan dihitung per hari menginap dalam bulan ini; pendapatan dicatat pada bulan pasien keluar.</div></div>
+        <div class="actions"><button class="btn small" id="dlRekap">Unduh CSV</button></div>
+      </div>
+      <div class="scroll"><table id="tblRekap">
+        <thead><tr><th>No</th><th>Nama pasien</th><th>No. RM</th><th>Ruangan / Kelas</th><th>Masuk</th><th>Keluar</th><th>ICD-10</th><th>Diagnosa utama</th><th class="r">HP bulan ini</th><th class="r">Total biaya</th></tr></thead>
+        <tbody></tbody><tfoot></tfoot>
+      </table></div>
+    </div>
+    <div class="two">
+      <div class="panel"><h3>Per ruangan / kelas</h3><div class="scroll"><table class="compact" id="tblKelas"><thead><tr><th>Ruangan / Kelas</th><th class="r">Pasien</th><th class="r">HP</th><th class="r">Pendapatan</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="panel"><h3>Diagnosa terbanyak</h3><div class="scroll"><table class="compact" id="tblDx"><thead><tr><th>ICD-10</th><th>Diagnosa</th><th class="r">Pasien</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  <div class="panel">
+      <h3>Rumus indikator</h3>
+      <dl class="formulas">
+        <div><dt>BOR · angka penggunaan tempat tidur</dt><dd>HP ÷ (jumlah TT × hari dalam periode) × 100%</dd></div>
+        <div><dt>AVLOS · rata-rata lama rawat</dt><dd>Jumlah lama dirawat ÷ pasien keluar (hidup + mati)</dd></div>
+        <div><dt>TOI · tenggang perputaran</dt><dd>((TT × periode) − HP) ÷ pasien keluar</dd></div>
+        <div><dt>BTO · frekuensi pemakaian tempat tidur</dt><dd>Pasien keluar (hidup + mati) ÷ jumlah TT</dd></div>
+        <div><dt>NDR · kematian ≥ 48 jam</dt><dd>Pasien meninggal ≥ 48 jam ÷ pasien keluar × 1000‰</dd></div>
+        <div><dt>GDR · kematian umum</dt><dd>Seluruh pasien meninggal ÷ pasien keluar × 1000‰</dd></div>
+      </dl>
+      <div class="note">Batas ideal yang ditampilkan adalah acuan umum Kemenkes. Samakan dengan standar rumah sakit Anda bila berbeda.</div>
+    </div>
+  </section>
+
+  <!-- MASTER -->
+  <section id="tab-master" class="wrap input-only" style="gap:16px" hidden>
+    <div class="panel">
+      <h2>Pengaturan indikator</h2>
+      <div class="formgrid" style="max-width:420px">
+        <div class="field"><label for="m-tt">Jumlah tempat tidur (TT)</label><input id="m-tt" class="mono" type="number" min="1"></div>
+      </div>
+      <div class="note">Dipakai untuk BOR, BTO, dan TOI. Hari dalam periode mengikuti jumlah hari pada bulan yang dipilih.</div>
+    </div>
+    <div class="two">
+      <div class="panel">
+        <div class="panel-head"><h2>Tarif ruangan</h2><span class="note">per hari rawat</span></div>
+        <form class="formgrid" id="tarifForm" style="grid-template-columns:1fr 150px auto;align-items:end">
+          <div class="field"><label for="t-nama">Ruangan / Kelas</label><input id="t-nama" placeholder="Melati - Kelas 1" required></div>
+          <div class="field"><label for="t-harga">Tarif (Rp)</label><input id="t-harga" class="mono" inputmode="numeric" required></div>
+          <button class="btn primary" type="submit" id="t-save">Simpan</button>
+        </form>
+        <div class="scroll"><table class="compact" id="tblTarif"><thead><tr><th>Ruangan / Kelas</th><th class="r">Tarif/hari</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div class="note">Tarif contoh. Sesuaikan dengan tarif resmi rumah sakit. Mengubah tarif ikut mengubah harga pasien yang sudah tercatat.</div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Master ICD-10</h2></div>
+        <form class="formgrid" id="icdForm" style="grid-template-columns:110px 1fr auto;align-items:end">
+          <div class="field"><label for="i-kode">Kode</label><input id="i-kode" class="mono" required></div>
+          <div class="field"><label for="i-nama">Nama penyakit / diagnosa</label><input id="i-nama" required></div>
+          <button class="btn primary" type="submit">Simpan</button>
+        </form>
+        <div class="scroll"><table class="compact" id="tblIcd"><thead><tr><th>Kode</th><th>Diagnosa</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="assets/app.js" defer></script>
+</body>
+</html>
